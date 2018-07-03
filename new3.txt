@@ -1,0 +1,102 @@
+<div class="guiAccountSection">
+		<button class="pure-button pure-button-green guiAccountButton"
+		onclick="GuiAccountPopup()">
+			電子發票歸戶
+			<span class="fa fa-play-circle guiAccountButtonIcon"></span>
+		</button>
+	<div class="bodyText guiAccountBody">
+		美樂家會員載具歸戶,<br>
+		設定電子發票歸戶,<br>
+		讓您方便兌換中獎發票.
+	</div>
+</div>
+<style>
+	.guiAccountSection {
+		width:150px;
+		float:right;
+	}
+	.guiAccountButton {
+		width:100%;
+		font-size:16px;
+	}
+	.guiAccountButtonIcon {
+		color:white !important;
+		font-size:18px !important;
+	}
+	.guiAccountBody {
+		background-color:white;
+		padding-left:15px;
+		padding-top:5px;
+	}
+	.Sending {
+		background-image:url(/Images/ajax-loader.gif);
+		background-repeat:no-repeat;
+		background-position-x: center;
+		background-position-y: center;
+	}
+	.titleExtraLarge {
+		width: 100%;
+		float: left;
+	}
+</style>
+<script>
+	var isOver = false;
+	function GuiAccountPopup() {
+		$(".guiAccountBody").addClass("Sending");
+		$.ajax({
+			type: "POST",
+			url: "/MyAccount/OrderHistory/GuiCarrierRegistration",
+			cache: false,
+			success: function () {
+				CheckRegistration();
+			},
+			error: function () {
+				$(".guiAccountBody").removeClass("Sending");
+				Popup.displayGeneralMessagePopup("很抱歉目前系統無法連線至財政部電子發票平台，請您晚點再試，謝謝。");
+			}
+		});
+	}
+
+	function CheckRegistration() {
+		var times;
+		for (times=0; times<6; times++) {
+			$.ajax({
+				type: "POST",
+				url: "/MyAccount/OrderHistory/GuiCarrierCheckRegistration",
+				cache: false,
+				data: { duration: 30 },
+				success: function (data) {
+					CheckRegistrationResult(data);					
+				}
+			});
+			if (isOver === true) { break; }
+			// time out 1 second
+			setTimeout("Timeout()", 1000);
+		}
+		if (isOver === false) {
+			$(".guiAccountBody").removeClass("Sending");
+			Popup.displayGeneralMessagePopup("很抱歉目前系統無法連線至財政部電子發票平台，請您晚點再試，謝謝。");			
+		}
+			
+	}
+	
+	function Timeout() {} // do not thing , just for time out
+
+	function CheckRegistrationResult(data) {		
+		if (data.length > 1) {
+			var i,j;
+			for ( i=0; i < data.length - 1; i++) {
+				for ( j=i+1; j < data.length ; j++) {
+					if (data[j].HashValue === data[i].HashValue && data[j].IsOutDirection !== data[i].IsOutDirection) {
+						$("#EinvoicePlatformUrl").val("https://wwwtest.einvoice.nat.gov.tw/APMEMBERVAN/membercardlogin");						
+						$(".guiAccountBody").removeClass("Sending");
+						Popup.displayGeneralContentPopup("TW_GUI_CreateCarrierAccount_ConfirmPopup");
+						isOver = true;
+						break;
+					}
+				}
+				if (isOver === true) { break; }
+			}
+		}
+	}
+</script>
