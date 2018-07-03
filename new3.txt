@@ -1,3 +1,4 @@
+<!-- test -->
 <div class="guiAccountSection">
 		<button class="pure-button pure-button-green guiAccountButton"
 		onclick="GuiAccountPopup()">
